@@ -8,7 +8,8 @@ fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
 const db = new Database(DB_PATH);
 
-db.pragma('journal_mode = WAL');
+const journalMode = process.env.SQLITE_JOURNAL_MODE || 'WAL';
+db.pragma(`journal_mode = ${journalMode}`);
 db.pragma('foreign_keys = ON');
 
 db.exec(`

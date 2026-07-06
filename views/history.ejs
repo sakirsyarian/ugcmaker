@@ -1,20 +1,22 @@
 <%- include('partials/header') %>
 
 <div class="page-history">
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">History</h1>
-      <p class="history-count" id="history-count">0 videos</p>
+  <div class="page-content-shell">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">History</h1>
+        <p class="history-count" id="history-count">0 videos</p>
+      </div>
+      <div class="search-wrap">
+        <i class="ti ti-search"></i>
+        <input type="text" class="search-input" id="search-input" placeholder="Search videos">
+      </div>
     </div>
-    <div class="search-wrap">
-      <i class="ti ti-search"></i>
-      <input type="text" class="search-input" id="search-input" placeholder="Search videos">
+    <div class="video-grid" id="video-grid"></div>
+    <div class="empty-state" id="empty-state" style="display:none;">
+      <i class="ti ti-movie"></i>
+      <span>No videos yet</span>
     </div>
-  </div>
-  <div class="video-grid" id="video-grid"></div>
-  <div class="empty-state" id="empty-state" style="display:none;">
-    <i class="ti ti-movie"></i>
-    <span>No videos yet</span>
   </div>
 </div>
 
