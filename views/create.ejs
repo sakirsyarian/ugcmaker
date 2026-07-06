@@ -120,6 +120,7 @@
             <select class="recipe-input ugc-model-native" id="ai-model-select" aria-hidden="true" tabindex="-1">
               <option value="seedance-2.0">Seedance 2.0</option>
               <option value="seedance-2.0-fast">Seedance 2.0 Fast</option>
+              <option value="seedance-2.0-mini" data-kie-only="true">Seedance 2.0 Mini</option>
             </select>
             <div class="model-select-wrap compact-model-select" id="model-select-wrap">
               <button class="model-selector" id="model-selector" type="button" aria-haspopup="listbox" aria-expanded="false">
@@ -136,9 +137,14 @@
                   <span><strong>Seedance 2.0</strong><small>Quality mode</small></span>
                   <i class="ti ti-check"></i>
                 </button>
-                <button class="model-option" type="button" role="option" aria-selected="false" data-value="seedance-2.0-fast" data-name="Seedance 2.0 Fast" data-desc="Fast draft mode">
+                <button class="model-option" type="button" role="option" aria-selected="false" data-value="seedance-2.0-fast" data-name="Seedance 2.0 Fast" data-desc="Fast draft mode" data-kie-only="false">
                   <img src="/images/Dreamina Seedance icon.png" alt="">
                   <span><strong>Seedance 2.0 Fast</strong><small>Fast draft mode</small></span>
+                  <i class="ti ti-check"></i>
+                </button>
+                <button class="model-option" type="button" role="option" aria-selected="false" data-value="seedance-2.0-mini" data-name="Seedance 2.0 Mini" data-desc="Lightweight kie.ai mode" data-kie-only="true" hidden>
+                  <img src="/images/Dreamina Seedance icon.png" alt="">
+                  <span><strong>Seedance 2.0 Mini</strong><small>Lightweight kie.ai mode</small></span>
                   <i class="ti ti-check"></i>
                 </button>
               </div>
@@ -151,6 +157,7 @@
               <option value="720p">720p</option>
               <option value="1080p">1080p</option>
               <option value="480p">480p</option>
+              <option value="4k" data-kie-only="true" hidden>4K</option>
             </select>
           </div>
           <div>

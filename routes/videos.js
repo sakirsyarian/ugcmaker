@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { createVideo, updateVideoStatus, getVideoById, getAllVideos, deleteVideo, getSettings, getAllAssets } = require('../database');
-const { createVideoTask, pollTaskStatus } = require('../services/seedance');
+const { createVideoTask, pollTaskStatus, resolveDownloadUrl } = require('../services/videoProvider');
 const { downloadVideo, saveThumbnail } = require('../services/localMedia');
 
 const publicVideo = (video) => {
@@ -27,6 +27,11 @@ router.post('/generate', async (req, res) => {
   const settings = getSettings();
   if (!settings.api_key) {
     return res.status(400).json({ error: 'API key not configured. Go to Settings to add your API key.' });
+  }
+
+  const selectedModel = ai_model || settings.default_model;
+  if ((settings.api_provider || 'byteplus') !== 'kie' && selectedModel === 'seedance-2.0-mini') {
+    return res.status(400).json({ error: 'Seedance 2.0 Mini is only available with the kie.ai provider.' });
   }
 
   const result = createVideo({
@@ -105,7 +110,8 @@ const startPolling = (videoId, jobId) => {
       const result = await pollTaskStatus(jobId);
 
       if (result.status === 'completed' && result.video_url) {
-        const localVideoPath = await downloadVideo(videoId, result.video_url);
+        const downloadUrl = await resolveDownloadUrl(result.video_url);
+        const localVideoPath = await downloadVideo(videoId, downloadUrl);
         updateVideoStatus(videoId, {
           status: 'completed',
           video_url: result.video_url,

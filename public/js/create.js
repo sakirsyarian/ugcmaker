@@ -26,6 +26,51 @@
   var $ = function (sel) { return document.querySelector(sel); };
   var $$ = function (sel) { return document.querySelectorAll(sel); };
 
+  function getProvider() {
+    return (window.__settings && window.__settings.api_provider) || 'byteplus';
+  }
+
+  function syncOutputRules(modelValue) {
+    var provider = getProvider();
+    var resSelect = $('#resolution-select');
+    var modelSelect = $('#ai-model-select');
+    var modelValueResolved = modelValue || (modelSelect ? modelSelect.value : 'seedance-2.0');
+    var fullHd = resSelect ? resSelect.querySelector('option[value="1080p"]') : null;
+    var fourK = resSelect ? resSelect.querySelector('option[value="4k"]') : null;
+    var fastLike = modelValueResolved === 'seedance-2.0-fast' || modelValueResolved === 'seedance-2.0-mini';
+
+    if (modelSelect) {
+      modelSelect.querySelectorAll('option[data-kie-only="true"]').forEach(function (option) {
+        option.hidden = provider !== 'kie';
+        option.disabled = provider !== 'kie';
+      });
+      if (provider !== 'kie' && modelSelect.value === 'seedance-2.0-mini') {
+        modelSelect.value = 'seedance-2.0';
+        modelValueResolved = 'seedance-2.0';
+      }
+    }
+
+    $$('#model-options .model-option[data-kie-only="true"]').forEach(function (option) {
+      option.hidden = provider !== 'kie';
+    });
+
+    if (fourK) {
+      var enableFourK = provider === 'kie' && modelValueResolved === 'seedance-2.0';
+      fourK.hidden = !enableFourK;
+      fourK.disabled = !enableFourK;
+      if (!enableFourK && resSelect && resSelect.value === '4k') {
+        resSelect.value = '720p';
+      }
+    }
+
+    if (fullHd && resSelect) {
+      fullHd.disabled = fastLike;
+      if (fastLike && resSelect.value === '1080p') {
+        resSelect.value = '720p';
+      }
+    }
+  }
+
   var directorPresets = {
     'problem-solution': {
       'creator-vibe': 'friendly TikTok affiliate creator',
@@ -698,26 +743,15 @@
     if (!select) return;
 
     function applyModel(val) {
-      var resSelect = $('#resolution-select');
       var activeOption = options ? options.querySelector('.model-option[data-value="' + val + '"]') : null;
 
-      if (val === 'seedance-2.0-fast') {
-        if ($('#model-display-name')) $('#model-display-name').textContent = activeOption ? activeOption.dataset.name : 'Seedance 2.0 Fast';
-        if ($('#model-display-desc')) $('#model-display-desc').textContent = activeOption ? activeOption.dataset.desc : 'Fast draft mode';
-        if (resSelect) {
-          var opt = resSelect.querySelector('option[value="1080p"]');
-          if (opt) opt.disabled = true;
-          if (resSelect.value === '1080p') {
-            resSelect.value = '720p';
-          }
-        }
-      } else {
-        if ($('#model-display-name')) $('#model-display-name').textContent = activeOption ? activeOption.dataset.name : 'Seedance 2.0';
-        if ($('#model-display-desc')) $('#model-display-desc').textContent = activeOption ? activeOption.dataset.desc : 'Quality mode';
-        if (resSelect) {
-          var opt2 = resSelect.querySelector('option[value="1080p"]');
-          if (opt2) opt2.disabled = false;
-        }
+      syncOutputRules(val);
+
+      if ($('#model-display-name')) {
+        $('#model-display-name').textContent = activeOption ? activeOption.dataset.name : val;
+      }
+      if ($('#model-display-desc')) {
+        $('#model-display-desc').textContent = activeOption ? activeOption.dataset.desc : '';
       }
 
       if (options) {
@@ -1911,6 +1945,7 @@
 
   function loadPrefillData() {
     var settings = window.__settings || {};
+    syncOutputRules(settings.default_model);
     if (settings.default_resolution && $('#resolution-select')) $('#resolution-select').value = settings.default_resolution;
     if (settings.default_ratio && $('#ratio-select')) $('#ratio-select').value = settings.default_ratio;
     if (settings.default_duration) {

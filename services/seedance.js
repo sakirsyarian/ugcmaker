@@ -190,8 +190,12 @@ const pollTaskStatus = async (jobId) => {
   };
 };
 
+const resolveDownloadUrl = async (url) => url;
+
 module.exports = {
   createVideoTask,
   pollTaskStatus,
-  imageToPatternedDataUrl
+  resolveDownloadUrl,
+  imageToPatternedDataUrl,
+  imageToDataUrl
 };

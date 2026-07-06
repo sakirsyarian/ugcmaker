@@ -75,6 +75,7 @@ try { db.exec("ALTER TABLE videos ADD COLUMN thumbnail_path TEXT"); } catch (e) 
 try { db.exec("ALTER TABLE queue_items ADD COLUMN updated_at DATETIME"); } catch (e) {}
 try { db.exec("ALTER TABLE queue_items ADD COLUMN started_at DATETIME"); } catch (e) {}
 try { db.exec("ALTER TABLE queue_items ADD COLUMN completed_at DATETIME"); } catch (e) {}
+try { db.exec("ALTER TABLE settings ADD COLUMN api_provider TEXT DEFAULT 'byteplus'"); } catch (e) {}
 
 const getSettings = () => db.prepare('SELECT * FROM settings WHERE id = 1').get();
 
@@ -83,6 +84,7 @@ const updateSettings = (data) => {
     UPDATE settings SET
       api_key = COALESCE(?, api_key),
       api_base_url = COALESCE(?, api_base_url),
+      api_provider = COALESCE(?, api_provider),
       default_resolution = COALESCE(?, default_resolution),
       default_ratio = COALESCE(?, default_ratio),
       default_model = COALESCE(?, default_model),
@@ -92,6 +94,7 @@ const updateSettings = (data) => {
   return stmt.run(
     data.api_key ?? null,
     data.api_base_url ?? null,
+    data.api_provider ?? null,
     data.default_resolution ?? null,
     data.default_ratio ?? null,
     data.default_model ?? null,
