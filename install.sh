@@ -7,89 +7,74 @@ cd "$ROOT_DIR"
 # shellcheck source=scripts/install-common.sh
 source "$ROOT_DIR/scripts/install-common.sh"
 
-NODE_MAJOR="${NODE_MAJOR:-22}"
 PM2_APP_NAME="${PM2_APP_NAME:-ugcmaker}"
 
-node_version_ok() {
-  command -v node >/dev/null 2>&1 || return 1
-  local major
-  major="$(node -p "process.version.slice(1).split('.')[0]" 2>/dev/null || echo 0)"
-  [ "$major" -ge "$NODE_MAJOR" ]
+bun_ready() {
+  command -v bun >/dev/null 2>&1
 }
 
-confirm_node_install() {
-  if [ "${AUTO_INSTALL_NODE:-}" = "1" ]; then
+confirm_bun_install() {
+  if [ "${AUTO_INSTALL_BUN:-}" = "1" ]; then
     return 0
   fi
 
   if [ ! -t 0 ]; then
-    echo "Error: Node.js ${NODE_MAJOR}+ is not installed." >&2
-    echo "Install Node manually, or rerun with: AUTO_INSTALL_NODE=1 ./install.sh" >&2
+    echo "Error: Bun is not installed." >&2
+    echo "Install Bun manually, or rerun with: AUTO_INSTALL_BUN=1 ./install.sh" >&2
     exit 1
   fi
 
-  printf 'Node.js %s+ belum terpasang di server ini.\n' "$NODE_MAJOR"
-  printf 'Install Node.js sekarang? [y/N] '
+  printf 'Bun belum terpasang di server ini.\n'
+  printf 'Install Bun sekarang? [y/N] '
   read -r reply
   case "$reply" in
     y|Y|yes|YES) return 0 ;;
     *)
-      echo "Install dibatalkan. Lihat DEPLOY.md untuk instalasi manual Node.js." >&2
+      echo "Install dibatalkan. Lihat https://bun.sh/docs/installation" >&2
       exit 1
       ;;
   esac
 }
 
-install_node_linux() {
-  log "Installing Node.js ${NODE_MAJOR}.x (NodeSource)..."
+install_bun_linux() {
+  log "Installing Bun (https://bun.sh/install)..."
   if command -v curl >/dev/null 2>&1; then
-    run_root bash -c "curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash -"
+    run_root bash -c 'curl -fsSL https://bun.sh/install | bash'
   elif command -v wget >/dev/null 2>&1; then
-    run_root bash -c "wget -qO- https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash -"
+    run_root bash -c 'wget -qO- https://bun.sh/install | bash'
   else
-    echo "Error: curl or wget is required to install Node.js." >&2
+    echo "Error: curl or wget is required to install Bun." >&2
     exit 1
   fi
-  run_root apt-get install -y nodejs
+
+  if ! bun_ready; then
+    export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
+    export PATH="$BUN_INSTALL/bin:$PATH"
+  fi
 }
 
-ensure_node() {
-  if node_version_ok; then
-    log "Node.js $(node -v) sudah terpasang, skip instalasi Node."
+ensure_bun() {
+  if bun_ready; then
+    log "Bun sudah terpasang ($(bun --version)), skip instalasi Bun."
     return 0
   fi
 
   if [ "$(uname -s)" != "Linux" ]; then
-    echo "Error: Auto-install Node.js hanya untuk Linux server." >&2
-    echo "Install Node.js ${NODE_MAJOR}+ manual, lalu jalankan ulang ./install.sh" >&2
+    echo "Error: Auto-install Bun hanya untuk Linux server." >&2
+    echo "Di Windows/Mac, install Bun dari https://bun.sh" >&2
     exit 1
   fi
 
-  confirm_node_install
-  install_node_linux
+  confirm_bun_install
+  install_bun_linux
 
-  if ! node_version_ok; then
-    echo "Error: Node.js installation finished but version is still too old." >&2
+  if ! bun_ready; then
+    echo "Error: Bun installation finished but bun is not in PATH." >&2
+    echo "Try: export PATH=\"\$HOME/.bun/bin:\$PATH\"" >&2
     exit 1
   fi
 
-  log "Node.js $(node -v) berhasil diinstall."
-}
-
-ensure_build_deps() {
-  if [ "$(uname -s)" != "Linux" ]; then
-    return 0
-  fi
-
-  if ! command -v apt-get >/dev/null 2>&1; then
-    log "Skipping build deps (apt-get not found). Install build-essential and libvips manually if npm install fails."
-    return 0
-  fi
-
-  log "Installing build dependencies (build-essential, python3, libvips)..."
-  run_root apt-get update -qq
-  run_root apt-get install -y --no-install-recommends \
-    build-essential python3 libvips42
+  log "Bun berhasil diinstall."
 }
 
 confirm_pm2_install() {
@@ -109,7 +94,7 @@ confirm_pm2_install() {
   case "$reply" in
     y|Y|yes|YES) return 0 ;;
     *)
-      echo "Install dibatalkan. Install manual: npm install -g pm2" >&2
+      echo "Install dibatalkan. Install manual: bun add -g pm2" >&2
       exit 1
       ;;
   esac
@@ -123,12 +108,12 @@ ensure_pm2() {
 
   confirm_pm2_install
   log "Installing PM2 globally..."
-  run_root npm install -g pm2
+  run_root bun add -g pm2
 }
 
 install_dependencies() {
-  log "Installing npm dependencies..."
-  npm ci --omit=dev
+  log "Installing dependencies (bun install)..."
+  bun install --production
 }
 
 start_pm2_app() {
@@ -141,7 +126,7 @@ start_pm2_app() {
   fi
 
   log "Starting UGC Maker with PM2..."
-  PORT="$PORT" NODE_ENV=production pm2 start server.js --name "$PM2_APP_NAME"
+  PORT="$PORT" NODE_ENV=production pm2 start bun --name "$PM2_APP_NAME" -- run src/index.ts
   pm2 save
 }
 
@@ -175,8 +160,7 @@ configure_pm2_startup() {
 }
 
 main() {
-  ensure_node
-  ensure_build_deps
+  ensure_bun
 
   ensure_env_file
   ensure_data_dirs
@@ -188,7 +172,7 @@ main() {
 
   load_port
 
-  log "UGC Maker is running (PM2)."
+  log "UGC Maker is running (Bun + PM2)."
   echo "  Local:    http://localhost:${PORT}"
   echo "  Status:   pm2 status"
   echo "  Logs:     pm2 logs ${PM2_APP_NAME}"

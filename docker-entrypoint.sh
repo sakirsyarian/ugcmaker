@@ -9,6 +9,9 @@ mkdir -p \
   /app/downloads/videos \
   /app/downloads/thumbnails
 
-chown -R node:node /app/data /app/uploads /app/downloads
+if id bun >/dev/null 2>&1; then
+  chown -R bun:bun /app/data /app/uploads /app/downloads 2>/dev/null || true
+  exec su -s /bin/sh bun -c 'exec "$@"' sh "$@"
+fi
 
-exec su -s /bin/sh node -c 'exec "$@"' sh "$@"
+exec "$@"

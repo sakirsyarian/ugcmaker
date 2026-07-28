@@ -1,9 +1,9 @@
 # UGC Video Maker
 
-![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933?logo=node.js&logoColor=white)
+![Bun](https://img.shields.io/badge/Bun-1.x-black?logo=bun&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-supported-2496ED?logo=docker&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-local-003B57?logo=sqlite&logoColor=white)
-![EJS](https://img.shields.io/badge/EJS-templates-B4CA65)
+![Hono](https://img.shields.io/badge/Hono-API-E36002)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
 <img width="3092" height="933" alt="a" src="https://github.com/user-attachments/assets/01576cc4-ecae-440a-83ad-a3072dabc3f2" />
@@ -29,11 +29,11 @@ UGC Video Maker is a web application for generating affiliate-style UGC videos w
 
 ## Quick Start (Local Development)
 
-**Requirements:** Node.js 22+, npm
+**Requirements:** [Bun 1.x](https://bun.sh)
 
 ```bash
-npm install
-npm start
+bun install
+bun run start
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
@@ -41,21 +41,19 @@ Open [http://localhost:3000](http://localhost:3000)
 Development with auto-reload:
 
 ```bash
-npm run dev
+bun run dev
 ```
-
-> On Windows, use **Node.js 22 LTS** if `better-sqlite3` fails to install on Node 24.
 
 ## Deploy to Server
 
-**Default (PM2)** — recommended for small VPS (1 GB RAM):
+**Default (PM2 + Bun)** — recommended for small VPS (1 GB RAM):
 
 ```bash
 chmod +x install.sh
 ./install.sh
 ```
 
-Installs Node.js 22 (if missing), npm dependencies, PM2, and starts the app on port **3000**.
+Installs Bun (if missing on Linux), dependencies, PM2, and starts the app on port **3000**.
 
 **Docker** — recommended for 2 GB+ RAM or isolated deploy:
 
@@ -69,7 +67,7 @@ chmod +x install-docker.sh
 Non-interactive install:
 
 ```bash
-AUTO_INSTALL_NODE=1 AUTO_INSTALL_PM2=1 ./install.sh
+AUTO_INSTALL_BUN=1 AUTO_INSTALL_PM2=1 ./install.sh
 AUTO_INSTALL_DOCKER=1 ./install-docker.sh
 ```
 
@@ -96,10 +94,10 @@ BytePlus:  https://ark.ap-southeast.bytepluses.com/api/v3
 
 ## Tech Stack
 
-- Node.js, Express, EJS
-- SQLite (`better-sqlite3`)
-- Multer, Sharp
-- Vanilla JavaScript and CSS
+- Bun runtime, Hono, hono/jsx (TypeScript)
+- SQLite (`bun:sqlite`)
+- Sharp (image processing)
+- Vanilla JavaScript and CSS in `public/js`
 - Docker + Docker Compose (optional deploy)
 - PM2 (default server deploy via `install.sh`)
 
@@ -107,22 +105,21 @@ BytePlus:  https://ark.ap-southeast.bytepluses.com/api/v3
 
 ```txt
 .
-├── server.js              # Express entry point
-├── database.js            # SQLite schema and helpers
-├── routes/                # Pages and API routes
-├── services/
-│   ├── seedance.js        # BytePlus Seedance client
-│   ├── kie.js             # kie.ai Seedance client
-│   ├── kieUpload.js       # kie.ai file upload
-│   ├── videoProvider.js   # Provider adapter (BytePlus / kie)
-│   └── localMedia.js      # Video download and thumbnails
-├── views/                 # EJS templates
+├── src/
+│   ├── index.ts           # Bun.serve entry
+│   ├── app.ts             # Hono app, static files, API mount
+│   ├── db/database.ts     # SQLite schema and helpers
+│   ├── routes/
+│   │   ├── pages.tsx      # HTML pages (Create, History, Settings)
+│   │   └── api/           # REST API
+│   ├── services/          # kie, BytePlus, uploads, local media
+│   └── views/             # JSX page shells (Layout + pages)
 ├── public/                # CSS, JS, static assets
 ├── uploads/               # User reference images
 ├── downloads/             # Generated videos and thumbnails
 ├── Dockerfile
 ├── docker-compose.yml
-├── install.sh             # Default deploy: Node.js + PM2
+├── install.sh             # Default deploy: Bun + PM2
 ├── install-docker.sh      # Docker deploy (+ optional Docker install)
 ├── scripts/
 │   └── install-common.sh  # Shared install helpers

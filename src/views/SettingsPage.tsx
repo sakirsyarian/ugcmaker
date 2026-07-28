@@ -1,0 +1,114 @@
+import type { SettingsRow } from '../db/types';
+import { durationOptions, safeJson } from './helpers';
+
+export const SettingsPage = ({ settings }: { settings: SettingsRow }) => (
+  <>
+    <div class="page-settings">
+      <div class="page-content-shell">
+        <div class="page-header">
+          <h1 class="page-title">Settings</h1>
+        </div>
+        <div class="settings-container">
+          <div class="settings-section">
+            <div class="settings-section-title">API Configuration</div>
+            <div class="form-group">
+              <label class="form-label">API Provider</label>
+              <select class="form-select" id="api-provider-select">
+                <option value="byteplus">BytePlus ModelArk</option>
+                <option value="kie">kie.ai</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">API Key</label>
+              <div class="input-with-action">
+                <input type="password" class="form-input" id="api-key-input" placeholder="Enter your API key" />
+                <button class="input-action" id="toggle-key" type="button">
+                  Show
+                </button>
+              </div>
+              <div class="form-hint" id="api-key-hint">
+                Required for video generation. Get your key from
+                <a
+                  href="https://console.byteplus.com/ark/region:ark+ap-southeast-1/apiKey?apikey=%7B%7D"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  id="api-key-link"
+                >
+                  BytePlus console
+                </a>
+                .
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">API Base URL</label>
+              <input type="text" class="form-input" id="api-url-input" />
+            </div>
+            <div class="form-group" id="credits-group" hidden>
+              <label class="form-label">Account Credits</label>
+              <div class="form-hint" id="credits-display">
+                Loading credits...
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-title">Default Settings</div>
+            <div class="settings-row-2">
+              <div class="form-group">
+                <label class="form-label">Resolution</label>
+                <select class="form-select" id="def-resolution">
+                  <option value="1080p">1080p</option>
+                  <option value="720p">720p</option>
+                  <option value="480p">480p</option>
+                  <option value="4k">4K</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Ratio</label>
+                <select class="form-select" id="def-ratio">
+                  <option value="9:16">9:16</option>
+                  <option value="16:9">16:9</option>
+                  <option value="1:1">1:1</option>
+                  <option value="4:3">4:3</option>
+                  <option value="3:4">3:4</option>
+                  <option value="adaptive">Adaptive</option>
+                </select>
+              </div>
+            </div>
+            <div class="settings-row-2">
+              <div class="form-group">
+                <label class="form-label">Model</label>
+                <select class="form-select" id="def-model">
+                  <option value="seedance-2.0">Seedance 2.0</option>
+                  <option value="seedance-2.0-fast">Seedance 2.0 Fast</option>
+                  <option value="seedance-2.0-mini" data-kie-only="true">
+                    Seedance 2.0 Mini
+                  </option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Duration</label>
+                <select class="form-select" id="def-duration">
+                  {durationOptions('s', 5)}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary settings-save-btn" id="save-btn" type="button">
+            Save Settings
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `window.__currentSettings = ${safeJson(settings)};`
+      }}
+    />
+    <script src="/js/settings.js"></script>
+  </>
+);

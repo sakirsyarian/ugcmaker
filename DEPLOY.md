@@ -33,9 +33,9 @@ Sebelum mulai, siapkan:
 |---|-------------------|------------|
 | Script | `./install.sh` | `./install-docker.sh` |
 | RAM | 1 GB cukup | 2 GB disarankan |
-| Prasyarat | Node.js 22 (auto-install) | Docker (auto-install) |
+| Prasyarat | Bun 1.x (auto-install di Linux) | Docker (auto-install) |
 | Backup DB | Langsung di `./data/ugc.db` | Perlu `docker cp` |
-| Cocok untuk | VPS kecil, personal | Isolasi, tanpa Node di host |
+| Cocok untuk | VPS kecil, personal | Isolasi, tanpa Bun di host |
 
 > **Rekomendasi:** VPS 1 GB → pakai `./install.sh`. VPS 2 GB+ atau sudah familiar Docker → `./install-docker.sh`.
 
@@ -73,16 +73,15 @@ chmod +x install.sh
 ```
 
 Script ini akan:
-- Mengecek Node.js 22 — **install otomatis jika belum ada** (Linux, setelah konfirmasi `y`)
-- Install build tools untuk native modules (`better-sqlite3`, `sharp`)
-- `npm ci --omit=dev`
-- Install PM2 dan menjalankan aplikasi
+- Mengecek **Bun** — **install otomatis jika belum ada** (Linux, setelah konfirmasi `y`)
+- `bun install --production`
+- Install PM2 dan menjalankan aplikasi (`bun run src/index.ts`)
 - Menyalakan UGC Maker di port **3000**
 
 Install tanpa konfirmasi (automation):
 
 ```bash
-AUTO_INSTALL_NODE=1 AUTO_INSTALL_PM2=1 AUTO_PM2_STARTUP=1 ./install.sh
+AUTO_INSTALL_BUN=1 AUTO_INSTALL_PM2=1 AUTO_PM2_STARTUP=1 ./install.sh
 ```
 
 ### Opsi B — Docker
@@ -183,7 +182,7 @@ Jalankan semua perintah di folder project (`cd /opt/ugcmaker`):
 | Stop aplikasi | `pm2 stop ugcmaker` |
 | Start lagi | `pm2 start ugcmaker` |
 | Restart | `pm2 restart ugcmaker` |
-| Update setelah `git pull` | `git pull && npm ci --omit=dev && pm2 restart ugcmaker` |
+| Update setelah `git pull` | `git pull && bun install --production && pm2 restart ugcmaker` |
 
 ### Docker (`./install-docker.sh`)
 
@@ -239,7 +238,7 @@ Jalankan backup secara berkala (misalnya seminggu sekali).
 ```bash
 cd /opt/ugcmaker
 git pull
-npm ci --omit=dev
+bun install --production
 pm2 restart ugcmaker
 ```
 
@@ -264,15 +263,17 @@ pm2 logs ugcmaker --lines 50
 pm2 restart ugcmaker
 ```
 
-### PM2 — `npm ci` gagal (better-sqlite3)
+### PM2 — `bun install` gagal (sharp)
 
-Pastikan build tools terpasang:
+Pastikan libvips terpasang (Linux):
 
 ```bash
-sudo apt-get install -y build-essential python3 libvips42
-npm ci --omit=dev
+sudo apt-get install -y libvips42
+bun install --production
 pm2 restart ugcmaker
 ```
+
+Di Windows dev, install [Bun](https://bun.sh) dan jalankan `bun install` dari folder project.
 
 ### Docker belum terpasang / permission denied
 
@@ -339,11 +340,11 @@ Cek:
 
 ## Deploy di Windows (Lokal / Testing)
 
-**Development (Node langsung):**
+**Development (Bun langsung):**
 
 ```powershell
-npm install
-npm start
+bun install
+bun run start
 ```
 
 **Docker Desktop:**
@@ -384,7 +385,7 @@ docker compose logs -f
 docker compose up -d
 
 # Update — PM2
-git pull && npm ci --omit=dev && pm2 restart ugcmaker
+git pull && bun install --production && pm2 restart ugcmaker
 
 # Update — Docker
 git pull && docker compose up -d --build

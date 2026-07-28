@@ -1,9 +1,8 @@
-const fetch = require('node-fetch');
-const fs = require('fs');
-const path = require('path');
-const { pipeline } = require('stream/promises');
+import fs from 'fs';
+import path from 'path';
+import { PROJECT_ROOT } from '../paths';
 
-const DOWNLOAD_ROOT = path.join(__dirname, '..', 'downloads');
+const DOWNLOAD_ROOT = path.join(PROJECT_ROOT, 'downloads');
 const VIDEO_DIR = path.join(DOWNLOAD_ROOT, 'videos');
 const THUMB_DIR = path.join(DOWNLOAD_ROOT, 'thumbnails');
 
@@ -12,11 +11,11 @@ const ensureDirs = () => {
   fs.mkdirSync(THUMB_DIR, { recursive: true });
 };
 
-const toPublicPath = (fullPath) => {
-  return path.relative(path.join(__dirname, '..'), fullPath).replace(/\\/g, '/');
+const toPublicPath = (fullPath: string) => {
+  return path.relative(PROJECT_ROOT, fullPath).replace(/\\/g, '/');
 };
 
-const downloadVideo = async (videoId, videoUrl) => {
+export const downloadVideo = async (videoId: number, videoUrl: string) => {
   ensureDirs();
   const outputPath = path.join(VIDEO_DIR, `video-${videoId}.mp4`);
 
@@ -29,11 +28,12 @@ const downloadVideo = async (videoId, videoUrl) => {
     throw new Error(`Failed to download video with status ${response.status}`);
   }
 
-  await pipeline(response.body, fs.createWriteStream(outputPath));
+  const buffer = await response.arrayBuffer();
+  await Bun.write(outputPath, buffer);
   return toPublicPath(outputPath);
 };
 
-const saveThumbnail = (videoId, dataUrl) => {
+export const saveThumbnail = (videoId: number, dataUrl: string) => {
   ensureDirs();
   const match = String(dataUrl || '').match(/^data:image\/(png|jpeg|jpg|webp);base64,(.+)$/);
   if (!match) {
@@ -44,9 +44,4 @@ const saveThumbnail = (videoId, dataUrl) => {
   const outputPath = path.join(THUMB_DIR, `video-${videoId}.${ext}`);
   fs.writeFileSync(outputPath, Buffer.from(match[2], 'base64'));
   return toPublicPath(outputPath);
-};
-
-module.exports = {
-  downloadVideo,
-  saveThumbnail
 };
