@@ -4,7 +4,44 @@ const path = require('path');
 
 const UPLOAD_BASE_URL = 'https://kieai.redpandaai.co';
 const CACHE_TTL_MS = 20 * 60 * 60 * 1000;
+const BASE64_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const uploadCache = new Map();
+
+const mimeFromPath = (filePath) => {
+  const ext = path.extname(filePath).toLowerCase().replace('.', '');
+  const mimeMap = {
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    png: 'image/png',
+    webp: 'image/webp',
+    gif: 'image/gif'
+  };
+  return mimeMap[ext] || 'application/octet-stream';
+};
+
+const extractUploadUrl = (result) => {
+  const data = result.data || {};
+  return data.downloadUrl || data.fileUrl || null;
+};
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const withUploadRetry = async (fn, attempts = 3) => {
+  let lastError;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      const retryable = /ECONNRESET|ETIMEDOUT|ECONNREFUSED|socket hang up/i.test(String(err.message || err));
+      if (!retryable || i === attempts - 1) {
+        throw err;
+      }
+      await sleep(1000 * (i + 1));
+    }
+  }
+  throw lastError;
+};
 
 const resolveAssetPath = (asset) => {
   const filepath = asset.filepath || '';
@@ -50,11 +87,18 @@ const uploadBase64 = async (apiKey, base64Data, fileName) => {
   });
 
   const result = await response.json().catch(() => ({}));
-  if (!response.ok || result.code !== 200 || !result.data?.fileUrl) {
+  const fileUrl = extractUploadUrl(result);
+  if (!response.ok || result.code !== 200 || !fileUrl) {
     throw new Error(result.msg || `Kie file upload failed with status ${response.status}`);
   }
 
-  return result.data.fileUrl;
+  return fileUrl;
+};
+
+const fileToBase64DataUrl = (fullPath) => {
+  const bytes = fs.readFileSync(fullPath);
+  const mime = mimeFromPath(fullPath);
+  return `data:${mime};base64,${bytes.toString('base64')}`;
 };
 
 const uploadStream = async (apiKey, fullPath, fileName) => {
@@ -71,11 +115,12 @@ const uploadStream = async (apiKey, fullPath, fileName) => {
   });
 
   const result = await response.json().catch(() => ({}));
-  if (!response.ok || result.code !== 200 || !result.data?.fileUrl) {
+  const fileUrl = extractUploadUrl(result);
+  if (!response.ok || result.code !== 200 || !fileUrl) {
     throw new Error(result.msg || `Kie file upload failed with status ${response.status}`);
   }
 
-  return result.data.fileUrl;
+  return fileUrl;
 };
 
 const uploadAsset = async (apiKey, asset, options = {}) => {
@@ -89,11 +134,17 @@ const uploadAsset = async (apiKey, asset, options = {}) => {
   if (options.patternReferences && options.patternFn) {
     const base64Data = await options.patternFn(asset);
     const fileName = `pattern-${path.basename(asset.filepath, path.extname(asset.filepath))}.png`;
-    fileUrl = await uploadBase64(apiKey, base64Data, fileName);
+    fileUrl = await withUploadRetry(() => uploadBase64(apiKey, base64Data, fileName));
   } else {
     const fullPath = resolveAssetPath(asset);
     const fileName = path.basename(fullPath);
-    fileUrl = await uploadStream(apiKey, fullPath, fileName);
+    const size = fs.statSync(fullPath).size;
+    if (size <= BASE64_UPLOAD_MAX_BYTES) {
+      const base64Data = fileToBase64DataUrl(fullPath);
+      fileUrl = await withUploadRetry(() => uploadBase64(apiKey, base64Data, fileName));
+    } else {
+      fileUrl = await withUploadRetry(() => uploadStream(apiKey, fullPath, fileName));
+    }
   }
 
   uploadCache.set(cacheKey, { url: fileUrl, at: Date.now() });
